@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{93453927-7413-48DF-B39E-463098924612}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyloopScheduler.Domain", "src\KeyloopScheduler.Domain\KeyloopScheduler.Domain.csproj", "{47BA7661-93D7-4478-8E04-A36A694F0530}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyloopScheduler.Infrastructure", "src\KeyloopScheduler.Infrastructure\KeyloopScheduler.Infrastructure.csproj", "{BC11C22A-121C-42F2-BE29-DE90CA7BE239}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyloopScheduler.Api", "src\KeyloopScheduler.Api\KeyloopScheduler.Api.csproj", "{2D3019A1-D401-48F9-A580-976E73645EED}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{DD5FFA7A-84A8-4DED-AD52-A557FAC85FC3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyloopScheduler.Tests", "tests\KeyloopScheduler.Tests\KeyloopScheduler.Tests.csproj", "{2838B037-FB5D-49A1-AA28-E8A025E49F16}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{47BA7661-93D7-4478-8E04-A36A694F0530}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47BA7661-93D7-4478-8E04-A36A694F0530}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47BA7661-93D7-4478-8E04-A36A694F0530}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47BA7661-93D7-4478-8E04-A36A694F0530}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC11C22A-121C-42F2-BE29-DE90CA7BE239}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC11C22A-121C-42F2-BE29-DE90CA7BE239}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC11C22A-121C-42F2-BE29-DE90CA7BE239}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC11C22A-121C-42F2-BE29-DE90CA7BE239}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D3019A1-D401-48F9-A580-976E73645EED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D3019A1-D401-48F9-A580-976E73645EED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D3019A1-D401-48F9-A580-976E73645EED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D3019A1-D401-48F9-A580-976E73645EED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2838B037-FB5D-49A1-AA28-E8A025E49F16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2838B037-FB5D-49A1-AA28-E8A025E49F16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2838B037-FB5D-49A1-AA28-E8A025E49F16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2838B037-FB5D-49A1-AA28-E8A025E49F16}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{47BA7661-93D7-4478-8E04-A36A694F0530} = {93453927-7413-48DF-B39E-463098924612}
+		{BC11C22A-121C-42F2-BE29-DE90CA7BE239} = {93453927-7413-48DF-B39E-463098924612}
+		{2D3019A1-D401-48F9-A580-976E73645EED} = {93453927-7413-48DF-B39E-463098924612}
+		{2838B037-FB5D-49A1-AA28-E8A025E49F16} = {DD5FFA7A-84A8-4DED-AD52-A557FAC85FC3}
+	EndGlobalSection
+EndGlobal
