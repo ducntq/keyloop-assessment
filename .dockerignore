@@ -1,0 +1,26 @@
+# Keep the build context small and the restore layer cache-friendly.
+
+# Version control / editor cruft
+**/.git
+**/.gitignore
+**/.vs
+**/.idea
+**/.vscode
+**/*.user
+**/*.suo
+**/*.swp
+
+# .NET build output (restored/published inside the image instead)
+**/bin
+**/obj
+**/out
+**/TestResults
+
+# Not needed to build the API image
+tests/
+docs/
+.codegraph/
+.omo/
+.config/
+*.md
+*.sln

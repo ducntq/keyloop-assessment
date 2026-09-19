@@ -109,6 +109,41 @@ below with Swagger UI.
 
 ---
 
+## Run with Docker Compose
+
+The whole stack — API + PostgreSQL 16 — comes up with one command, including migrations
+and the demo seed catalogue:
+
+```bash
+docker compose up --build
+```
+
+| Endpoint | URL |
+|---|---|
+| Swagger UI | <http://localhost:5080/swagger> |
+| Health | <http://localhost:5080/health> |
+| PostgreSQL | `localhost:5433` (user `postgres`, password `postgres`, db `keyloop_scheduler`) |
+
+Stop it with `docker compose down` (add `-v` to also drop the database volume).
+
+The API image is a two-stage build (`sdk:8.0` → `aspnet:8.0`) that publishes only the API
+project — Domain and Infrastructure come along transitively, so no test project enters the
+image. It runs as the non-root `app` user and defines a `HEALTHCHECK` on `/health`. The
+Compose stack waits for PostgreSQL's `pg_isready` healthcheck before starting the API,
+which runs with `ASPNETCORE_ENVIRONMENT=Development` so it applies migrations and seeds on
+startup.
+
+Override any of the following from the environment or a local `.env` file:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `API_PORT` | `5080` | Host port for the API |
+| `POSTGRES_PORT` | `5433` | Host port for PostgreSQL |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | `postgres` / `postgres` / `keyloop_scheduler` | Database credentials |
+| `ASPNETCORE_ENVIRONMENT` | `Development` | Set to `Production` to disable startup migration/seed and Swagger |
+
+---
+
 ## API
 
 | Method | Route | Success | Notes |

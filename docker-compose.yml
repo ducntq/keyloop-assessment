@@ -1,0 +1,53 @@
+# Keyloop Unified Service Scheduler — local stack.
+#
+#   docker compose up --build
+#
+#   Swagger UI : http://localhost:5080/swagger
+#   Health     : http://localhost:5080/health
+#   PostgreSQL : localhost:${POSTGRES_PORT:-5433}
+#
+# The API runs with ASPNETCORE_ENVIRONMENT=Development so it applies migrations
+# and seeds the demo catalogue on startup (AGENTS.md §8). All values below can be
+# overridden from the environment or a local .env file.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-keyloop_scheduler}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - keyloop-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-keyloop_scheduler}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: keyloop-scheduler-api:local
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__DefaultConnection: >-
+        Host=db;Port=5432;Database=${POSTGRES_DB:-keyloop_scheduler};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${API_PORT:-5080}:8080"
+    restart: unless-stopped
+
+volumes:
+  keyloop-pgdata:
