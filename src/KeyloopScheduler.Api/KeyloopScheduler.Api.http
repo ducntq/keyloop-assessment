@@ -1,0 +1,78 @@
+@host = http://localhost:5080
+
+### Seeded identifiers (see KeyloopScheduler.Infrastructure/Persistence/SeedData.cs)
+@dealershipId = a0000000-0000-0000-0000-000000000001
+@bay1 = b0000000-0000-0000-0000-000000000001
+@bay2 = b0000000-0000-0000-0000-000000000002
+@bay3 = b0000000-0000-0000-0000-000000000003
+@techA = c0000000-0000-0000-0000-000000000001
+@techB = c0000000-0000-0000-0000-000000000002
+@techC = c0000000-0000-0000-0000-000000000003
+@techD = c0000000-0000-0000-0000-000000000004
+@oilService = d0000000-0000-0000-0000-000000000001
+@brakeService = d0000000-0000-0000-0000-000000000002
+@evService = d0000000-0000-0000-0000-000000000003
+
+### Health probe
+GET {{host}}/health
+Accept: application/json
+
+### Search availability for Oil & Inspection (30 min) on 2026-09-22
+GET {{host}}/api/availability?dealershipId={{dealershipId}}&serviceTypeId={{oilService}}&date=2026-09-22
+Accept: application/json
+
+### Search availability for EV Battery Diagnostics (90 min) on 2026-09-22
+GET {{host}}/api/availability?dealershipId={{dealershipId}}&serviceTypeId={{evService}}&date=2026-09-22
+Accept: application/json
+
+### Book an Oil & Inspection appointment (auto-assign bay + technician closest match)
+POST {{host}}/api/appointments
+Content-Type: application/json
+
+{
+  "dealershipId": "{{dealershipId}}",
+  "serviceTypeId": "{{oilService}}",
+  "serviceBayId": null,
+  "technicianId": null,
+  "vin": "1HGBH41JXMN109186",
+  "startTimeUtc": "2026-09-22T09:00:00Z"
+}
+
+### Book a Brake Pad Replacement on a specific bay + technician
+POST {{host}}/api/appointments
+Content-Type: application/json
+
+{
+  "dealershipId": "{{dealershipId}}",
+  "serviceTypeId": "{{brakeService}}",
+  "serviceBayId": "{{bay2}}",
+  "technicianId": "{{techB}}",
+  "vin": "2T1BURHE0JC123456",
+  "startTimeUtc": "2026-09-22T10:30:00Z"
+}
+
+### Conflict demo: same bay + window as the previous request -> expect 409
+POST {{host}}/api/appointments
+Content-Type: application/json
+
+{
+  "dealershipId": "{{dealershipId}}",
+  "serviceTypeId": "{{oilService}}",
+  "serviceBayId": "{{bay2}}",
+  "technicianId": "{{techA}}",
+  "vin": "3VW2K7AJ0EM234567",
+  "startTimeUtc": "2026-09-22T10:30:00Z"
+}
+
+### Validation demo: non-UTC start -> expect 400
+POST {{host}}/api/appointments
+Content-Type: application/json
+
+{
+  "dealershipId": "{{dealershipId}}",
+  "serviceTypeId": "{{oilService}}",
+  "serviceBayId": null,
+  "technicianId": null,
+  "vin": "1HGBH41JXMN109186",
+  "startTimeUtc": "2026-09-22T09:00:00"
+}
