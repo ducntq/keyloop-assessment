@@ -205,6 +205,60 @@ wrap again in a transient-failure envelope. See `docs/ai-refinement-log.md` — 
 a real defect found by the Tier 3 suite and is the single most important correctness fix
 in the project.
 
+### Why `SERIALIZABLE` + in-transaction re-check, not `SELECT … FOR UPDATE`
+
+The write path must prevent a **phantom**: two concurrent bookings both observe "no
+overlapping appointment exists" and both insert. The obvious pessimistic tool —
+`SELECT … FOR UPDATE` over the `appointments` table — cannot solve that shape of problem,
+because **there is no row to lock**. `FOR UPDATE` locks the rows a query already returns;
+when the slot is genuinely free the overlap predicate returns the empty set, so there is
+nothing to lock and both transactions proceed to insert. The classic workaround is to
+lock the *resource* rows instead (`SELECT … FROM service_bays WHERE id = @bay FOR UPDATE`,
+likewise for the technician), but that trades one problem for several:
+
+| | `SELECT … FOR UPDATE` on resource rows | `SERIALIZABLE` + in-transaction re-check |
+|---|---|---|
+| Closes the phantom? | Only indirectly — by serialising on a surrogate row, not on the predicate | Yes — SSI tracks the read predicate, so an insert that would change the predicate's result is a conflict |
+| Lock ordering | Required. Bay and technician must always be locked in the same order on every write path (book, cancel, reschedule) or deadlocks (`40P01`) appear under load | Not required. SSI detects and aborts; there is no lock-order invariant to preserve |
+| Contention granularity | Coarse. Every booking for Bay 1 serialises on Bay 1's row — even two disjoint windows (09:00–09:30 and 15:00–16:30) that do not actually conflict | Fine. Transactions run concurrently and are aborted only when a genuine read/write dependency cycle exists |
+| Blocking vs. fail-fast | Waiters block on the lock, holding a pooled connection for an unbounded time | Losers fail fast at commit with `40001`/`40P01`, surfaced deterministically as `409`; no connection sits waiting |
+| Dual-resource rule | Two lock acquisitions to order and hold | One predicate that covers both resources |
+| Failure path | Deadlock and lock-timeout handling, lock-timeout tuning, retry classification | One classification (`IsContention`) walking the inner-exception chain → one deterministic `409` |
+
+Three properties make the serializable design decisive here:
+
+1. **The conflict is a predicate, not a row.** "No appointment overlaps this window for
+   this bay or this technician" protects the *absence* of rows. PostgreSQL's Serializable
+   Snapshot Isolation implements predicate locking, so the in-transaction
+   `HasResourceConflictAsync` re-check is not redundant belt-and-braces on top of
+   isolation — it is the read whose result SSI re-validates at commit. Two transactions
+   may both read "clean" and both insert, and SSI still aborts exactly one with `40001`.
+   Crucially, the re-check is only load-bearing *because* it runs under `SERIALIZABLE`;
+   under `READ COMMITTED` the same second read would see nothing and prevent nothing.
+2. **The dual-resource rule composes better as a predicate than as locks.** A booking
+   reserves a bay *and* a technician. Expressed as one `EXISTS` query with `OR` across the
+   two resource columns it is a single serializable read; expressed as row locks it is two
+   acquisitions that must be globally ordered, and every future writer (cancel, reschedule,
+   a bulk import) must obey the same order or reintroduce deadlocks.
+3. **The failure mode is explicit and testable.** SSI turns contention into a specific,
+   catchable SQLSTATE, which the unit of work classifies into `ScheduleConflictException`
+   → `409`. Tier 3 asserts the contract directly: under N simultaneous contenders for one
+   slot, exactly one `201`, the rest `409`, exactly one row. A lock-based design has no
+   comparable single failure signal — it has blocking, timeouts, and deadlocks to reason
+   about instead.
+
+**The honest trade-off.** SSI is optimistic: it can abort a transaction that had no real
+conflict (a false positive) and the loser forfeits its retried work, whereas pessimistic
+locking is predictable and never wastes a committed attempt. On a pathologically hot slot
+with hundreds of contenders, a correctly-ordered `FOR UPDATE` design can be cheaper,
+because it queues rather than burns and retries work. That trade is accepted here because
+appointment booking is not one hot slot — the realistic load is many bays and technicians
+across a day, where fine-grained predicate locking wins on throughput — and because the
+deterministic `409` gives clients a clean, well-defined recovery path (re-query
+availability). The natural future hardening steps — a `tstzrange` column with a GiST
+exclusion constraint, or `SERIALIZABLE` *plus* advisory locks for a known hot slot — are
+recorded in the trade-off table below.
+
 ---
 
 ## 4. Persistence
@@ -265,7 +319,7 @@ overlap predicate translates cleanly to SQL.
 | Decision | Chosen | Rejected alternative | Rationale |
 |---|---|---|---|
 | Runtime | **.NET 8 LTS** | .NET 9 / 10 | Assessment mandates .NET 8 LTS strictly |
-| Isolation | **`Serializable` + in-transaction re-check** | `SELECT ... FOR UPDATE` row locks | SSI needs no lock ordering discipline and scales better; the retry-on-`40001` path is explicit and testable |
+| Isolation | **`Serializable` + in-transaction re-check** | `SELECT ... FOR UPDATE` row locks | `FOR UPDATE` cannot lock the rows a free slot lacks, so it must serialise on surrogate resource rows; SSI tracks the conflict predicate itself, needs no lock ordering discipline, and scales better. The retry-on-`40001` path is explicit and testable — see §3 |
 | Interval persistence | **Two `timestamptz` columns** | `tstzrange` + GiST exclusion constraint | Keeps the mandated compound indexes usable and the predicate portable; the `tstzrange` approach would be the natural next hardening step |
 | Transaction boundary | **`IUnitOfWork.ExecuteInTransactionAsync`** | `DbContext.Database.BeginTransaction` in the service | Keeps EF Core out of the application service (DIP) |
 | Clock | **`TimeProvider`** | `DateTime.UtcNow` | Deterministic tests |
