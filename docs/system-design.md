@@ -406,7 +406,56 @@ regression guard and a zero-duplicate invariant query.
 
 ---
 
-## 9. Generative AI Collaboration Summary
+## 9. GenAI in the Design Phase
+
+The challenge requires GenAI to be used as an essential collaborator, so this section
+describes specifically how the agent contributed **before** implementation began — as
+distinct from the build-and-verify collaboration summarised in §10.
+
+**Contract first, code second.** The agent's first design act was to convert the scenario
+into a frozen domain contract — the entities, value objects, abstractions and invariants
+that later became `AGENTS.md` §4–§7 — before any layer was written. Freezing that surface
+first meant Infrastructure, the Api, and all three test tiers could be designed against a
+stable vocabulary instead of discovering it mid-build.
+
+**Option generation and trade-off analysis.** For each consequential design fork the agent
+produced candidate approaches with a written comparison, which the human then accepted or
+rejected. The §6 trade-off table is the durable output of that process:
+
+- **Concurrency** — `SERIALIZABLE` + in-transaction re-check versus `SELECT … FOR UPDATE`
+  row locks, analysed for phantom-safety, lock ordering and contention granularity (§3).
+- **Interval persistence** — two `timestamptz` columns versus `tstzrange` + a GiST
+  exclusion constraint, analysed for index usability and portability.
+- **Transaction boundary** — a domain-owned `IUnitOfWork` versus `DbContext.BeginTransaction`
+  inside the service, analysed against the dependency-inversion rule.
+- **Qualification policy** — a pluggable `ITechnicianQualificationRule` versus an inline
+  certification comparison, analysed for open/closed extensibility.
+
+**Surfacing ambiguity rather than silently resolving it.** Where the scenario left things
+open — bay capability, UTC-only opening hours, vehicle identity modelled as a VIN value
+object — the agent named the ambiguity and proposed an assumption rather than guessing
+silently, satisfying the challenge's instruction to document a reasonable assumption in
+this document. The §6 "Known limitations" list is that register.
+
+**Designing the verification strategy up front.** The three-tier test plan (fast domain
+units → HTTP contract tests against real PostgreSQL → a dedicated concurrency race suite)
+was a design-phase decision, not an implementation afterthought. Choosing the tiers before
+writing the engine is what made the race-condition path testable at all.
+
+**Where human judgement was decisive at design time.** The agent generated the options; the
+human chose between them and owned scope. Every entry in the §6 table records a decision
+the human accepted rather than one the agent took unilaterally.
+
+**A design-phase lesson.** The most important defect in this project — an omitted
+*customer* association (see §10 and `docs/ai-refinement-log.md` #4) — was a *design*
+omission, not a coding error. Because the frozen contract did not include the customer,
+every downstream artefact inherited the gap and no test could see it. The highest-leverage
+GenAI review activity is therefore not reviewing generated code, but reviewing the
+generated *contract* against the source requirements before any code exists.
+
+---
+
+## 10. Generative AI Collaboration Summary
 
 This solution was built with an AI coding agent (Sisyphus / OhMyOpenCode) under a
 spec-first discipline driven by `AGENTS.md`.
