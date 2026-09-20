@@ -35,6 +35,17 @@ public static class DbInitializer
     {
         ArgumentNullException.ThrowIfNull(context);
 
+        await SeedCatalogueAsync(context, logger, cancellationToken);
+        await SeedCustomersAsync(context, logger, cancellationToken);
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task SeedCatalogueAsync(
+        SchedulerDbContext context,
+        ILogger? logger,
+        CancellationToken cancellationToken)
+    {
         if (await context.Dealerships.AnyAsync(cancellationToken))
         {
             logger?.LogInformation("Seed skipped: dealership data already present.");
@@ -82,12 +93,39 @@ public static class DbInitializer
         context.Technicians.AddRange(technicians);
         context.ServiceTypes.AddRange(serviceTypes);
 
-        await context.SaveChangesAsync(cancellationToken);
-
         logger?.LogInformation(
             "Seed complete: {BayCount} bays, {TechnicianCount} technicians, {ServiceTypeCount} service types.",
             bays.Length,
             technicians.Length,
             serviceTypes.Length);
+    }
+
+    private static async Task SeedCustomersAsync(
+        SchedulerDbContext context,
+        ILogger? logger,
+        CancellationToken cancellationToken)
+    {
+        if (await context.Customers.AnyAsync(cancellationToken))
+        {
+            return;
+        }
+
+        var customers = new[]
+        {
+            new Customer(
+                SeedData.CustomerAId,
+                SeedData.DealershipId,
+                SeedData.CustomerAFullName,
+                SeedData.CustomerAEmail),
+            new Customer(
+                SeedData.CustomerBId,
+                SeedData.DealershipId,
+                SeedData.CustomerBFullName,
+                SeedData.CustomerBEmail)
+        };
+
+        context.Customers.AddRange(customers);
+
+        logger?.LogInformation("Seed complete: {CustomerCount} customers.", customers.Length);
     }
 }

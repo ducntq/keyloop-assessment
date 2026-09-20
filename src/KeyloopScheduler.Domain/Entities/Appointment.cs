@@ -6,8 +6,8 @@ using KeyloopScheduler.Domain.ValueObjects;
 namespace KeyloopScheduler.Domain.Entities;
 
 /// <summary>
-/// A reservation that binds one service bay, one qualified technician and one
-/// vehicle to a contiguous interval of time.
+/// A reservation that binds one customer, one service bay, one qualified
+/// technician and one vehicle to a contiguous interval of time.
 /// </summary>
 /// <remarks>
 /// The interval is modelled by <see cref="TimeWindow"/> (which owns all interval
@@ -25,6 +25,8 @@ public sealed class Appointment
     public Guid TechnicianId { get; private set; }
 
     public Guid ServiceTypeId { get; private set; }
+
+    public Guid CustomerId { get; private set; }
 
     public Vin VehicleIdentification { get; private set; }
 
@@ -55,6 +57,7 @@ public sealed class Appointment
         Guid serviceBayId,
         Guid technicianId,
         Guid serviceTypeId,
+        Guid customerId,
         Vin vehicleIdentification,
         TimeWindow window,
         DateTime createdAtUtc)
@@ -64,6 +67,7 @@ public sealed class Appointment
         ServiceBayId = serviceBayId;
         TechnicianId = technicianId;
         ServiceTypeId = serviceTypeId;
+        CustomerId = customerId;
         VehicleIdentification = vehicleIdentification;
         StartTimeUtc = window.StartUtc;
         EndTimeUtc = window.EndUtc;
@@ -77,6 +81,7 @@ public sealed class Appointment
         Guid serviceBayId,
         Guid technicianId,
         Guid serviceTypeId,
+        Guid customerId,
         Vin vehicleIdentification,
         TimeWindow window,
         DateTime createdAtUtc)
@@ -106,6 +111,11 @@ public sealed class Appointment
             throw new DomainValidationException("Service type id must not be empty.");
         }
 
+        if (customerId == Guid.Empty)
+        {
+            throw new DomainValidationException("Customer id must not be empty.");
+        }
+
         if (createdAtUtc.Kind != DateTimeKind.Utc)
         {
             throw new DomainValidationException("Created-at timestamp must be UTC.");
@@ -124,6 +134,7 @@ public sealed class Appointment
             serviceBayId,
             technicianId,
             serviceTypeId,
+            customerId,
             vehicleIdentification,
             window,
             createdAtUtc);

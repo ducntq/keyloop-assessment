@@ -88,6 +88,7 @@ Tests must be organized into 3 explicit tiers:
     - Oil & Inspection (30 mins, requires `GENERAL`).
     - Brake Pad Replacement (60 mins, requires `BRAKES`).
     - EV Battery Diagnostics (90 mins, requires `EV_CERTIFIED`).
+  - 2 Customers: `Alice Nguyen` (`e0000000-0000-0000-0000-000000000001`) and `Bob Carter` (`e0000000-0000-0000-0000-000000000002`), both at `Main Dealership`.
 
 ## 9. "Build For The Future" Standards
 - **Scalability**: Decouple availability checks (`GET /api/availability`) from write mutations (`POST /api/appointments`) to allow future CQRS or read replicas.

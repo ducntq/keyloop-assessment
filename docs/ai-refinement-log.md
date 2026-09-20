@@ -167,3 +167,46 @@ successfully.
 
 Pin framework-targeted APIs against the exact installed SDK. Target framework and
 runtime packages were correct; only the reference assembly version exposed the mismatch.
+
+---
+
+## 4. A required Scenario A association was missing: the customer
+
+**Where**: `src/KeyloopScheduler.Domain/Entities/Appointment.cs`, the booking contracts and schema
+**Caught by**: re-reading the Keyloop challenge PDF against the built system
+
+### Symptom
+
+Scenario A requirement 3 asks that a confirmed appointment "associate the **customer**,
+vehicle, technician, and service bay". The first-pass domain modelled dealership, bay,
+technician, service type and vehicle (VIN) — but **no customer**. A repository-wide search
+returned zero matches for `customer`, so the omission was total rather than partial.
+
+### Root cause
+
+The project's own execution contract (`AGENTS.md` §6/§8) enumerated the invariants and the
+seed catalogue without ever naming a customer. The AI built precisely to that contract, so
+the requirement it never encoded was never implemented. The gap was invisible to the test
+suite because every test was derived from the same incomplete contract — tests can prove
+conformance to the specification you hand them, not to the one you were actually given.
+
+### Fix
+
+Added a first-class `Customer` aggregate (dealership-scoped, with identity and lifecycle
+guards); a required `CustomerId` on `Appointment` and the booking command/result; catalogue
+lookup plus validation in the booking engine (unknown customer → `404`, wrong dealership or
+inactive customer → `400`); a `customers` table through a new `AddCustomer` migration and
+seed data; and Tier 1 + Tier 2 tests asserting the association is persisted.
+
+### Verification
+
+Tier 1 (79) and Tier 2 (27) pass, including three new tests proving a booking persists the
+customer, that an unknown customer is `404`, and that a customer from another dealership is
+`400`. Tier 3 concurrency still passes unchanged (2/2).
+
+### Lesson
+
+An AI agent optimises against the specification it is handed. When the source requirement
+document and the derived engineering contract disagree, only a direct re-read of the source
+catches the discrepancy — a green test suite cannot, because the suite inherits the same
+blind spot.

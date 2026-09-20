@@ -7,6 +7,7 @@ namespace KeyloopScheduler.Domain.Abstractions.Models;
 public sealed record BookingResult(
     Guid AppointmentId,
     Guid DealershipId,
+    Guid CustomerId,
     Guid ServiceBayId,
     Guid TechnicianId,
     Guid ServiceTypeId,

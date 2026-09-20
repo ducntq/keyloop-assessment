@@ -45,6 +45,7 @@ public sealed class AppointmentsController : ControllerBase
 
         var bookingRequest = new BookingRequest(
             request.DealershipId,
+            request.CustomerId,
             request.ServiceTypeId,
             request.ServiceBayId,
             request.TechnicianId,

@@ -31,6 +31,11 @@ internal sealed class ResourceCatalogQuery : IResourceCatalogQuery
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == technicianId, cancellationToken);
 
+    public Task<Customer?> GetCustomerAsync(Guid customerId, CancellationToken cancellationToken = default) =>
+        _context.Customers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == customerId, cancellationToken);
+
     public async Task<IReadOnlyList<ServiceBay>> GetActiveServiceBaysAsync(
         Guid dealershipId,
         CancellationToken cancellationToken = default) =>

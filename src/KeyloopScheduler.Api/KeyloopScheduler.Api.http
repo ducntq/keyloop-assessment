@@ -12,6 +12,8 @@
 @oilService = d0000000-0000-0000-0000-000000000001
 @brakeService = d0000000-0000-0000-0000-000000000002
 @evService = d0000000-0000-0000-0000-000000000003
+@customerA = e0000000-0000-0000-0000-000000000001
+@customerB = e0000000-0000-0000-0000-000000000002
 
 ### Health probe
 GET {{host}}/health
@@ -31,6 +33,7 @@ Content-Type: application/json
 
 {
   "dealershipId": "{{dealershipId}}",
+  "customerId": "{{customerA}}",
   "serviceTypeId": "{{oilService}}",
   "serviceBayId": null,
   "technicianId": null,
@@ -44,6 +47,7 @@ Content-Type: application/json
 
 {
   "dealershipId": "{{dealershipId}}",
+  "customerId": "{{customerA}}",
   "serviceTypeId": "{{brakeService}}",
   "serviceBayId": "{{bay2}}",
   "technicianId": "{{techB}}",
@@ -57,6 +61,7 @@ Content-Type: application/json
 
 {
   "dealershipId": "{{dealershipId}}",
+  "customerId": "{{customerA}}",
   "serviceTypeId": "{{oilService}}",
   "serviceBayId": "{{bay2}}",
   "technicianId": "{{techA}}",
@@ -70,6 +75,7 @@ Content-Type: application/json
 
 {
   "dealershipId": "{{dealershipId}}",
+  "customerId": "{{customerA}}",
   "serviceTypeId": "{{oilService}}",
   "serviceBayId": null,
   "technicianId": null,

@@ -34,7 +34,7 @@ flowchart TD
     end
 
     subgraph Domain["KeyloopScheduler.Domain — zero external dependencies"]
-        Ent["Entities<br/>Appointment · ServiceBay<br/>Technician · ServiceType · Dealership"]
+        Ent["Entities<br/>Appointment · ServiceBay · Customer<br/>Technician · ServiceType · Dealership"]
         VO["Value objects<br/>TimeWindow · Vin"]
         Rules["ITechnicianQualificationRule<br/>+ CertificationQualificationRule"]
         Abs["Abstractions<br/>IAppointmentBookingService · IResourceAvailabilityQuery<br/>IResourceCatalogQuery · IAppointmentRepository · IUnitOfWork"]
@@ -102,7 +102,7 @@ sequenceDiagram
     Ctrl->>Ctrl: new Vin(request.Vin)
     Ctrl->>Svc: BookAsync(BookingRequest)
 
-    Svc->>Cat: DealershipExistsAsync / GetServiceTypeAsync
+    Svc->>Cat: DealershipExistsAsync / GetServiceTypeAsync / GetCustomerAsync
     Cat->>DB: SELECT (no tracking)
     Svc->>Svc: TimeWindow(start, start + duration)
 
@@ -270,10 +270,11 @@ recorded in the trade-off table below.
 | `dealerships` | Ownership root |
 | `service_bays` | `is_active` flag participates in availability |
 | `technicians` | `certifications integer[]` — native PostgreSQL array so "holds certification X" is answered in SQL |
+| `customers` | `full_name`, `email`, `is_active` — the customer each appointment is booked for |
 | `service_types` | `duration_minutes`, `required_certification` |
-| `appointments` | `start_time_utc` / `end_time_utc` as `timestamptz`, `vin` via value conversion, `status` as text |
+| `appointments` | `start_time_utc` / `end_time_utc` as `timestamptz`, `vin` via value conversion, `status` as text, `customer_id` FK |
 
-### Indexes (mandated, present in the initial migration)
+### Indexes (mandated, present across the migrations)
 
 ```
 ix_appointments_bay_window                 (service_bay_id, start_time_utc, end_time_utc)
@@ -281,6 +282,7 @@ ix_appointments_technician_window          (technician_id, start_time_utc, end_t
 ix_appointments_dealership_status_start    (dealership_id, status, start_time_utc)
 ix_service_bays_dealership_active          (dealership_id, is_active)
 ix_technicians_dealership_active           (dealership_id, is_active)
+ix_customers_dealership_active             (dealership_id, is_active)
 ```
 
 The two window indexes match the overlap predicate's shape so contention checks are
@@ -311,6 +313,9 @@ overlap predicate translates cleanly to SQL.
 6. **Only `Scheduled` occupies resources** — `Cancelled` and `Completed` release them.
 7. **No bookings in the past** — enforced in `Appointment.Schedule` against the injected
    clock.
+8. **Customer association** — a confirmed appointment persists the customer alongside the
+   vehicle (VIN), service bay and technician; the customer must exist, be active, and
+   belong to the booking dealership (Scenario A requirement 3).
 
 ---
 
@@ -391,8 +396,8 @@ OpenTelemetry export to an APM) with no application changes, and the existing
 
 | Tier | Project location | Count | Infrastructure | Category filter |
 |---|---|---|---|---|
-| **1 — Domain units** | `Domain/` | 44 methods → 68 cases | None (in-memory) | `Category=Domain` |
-| **2 — Integration & contract** | `Integration/` | 24 cases | `WebApplicationFactory<Program>` + Testcontainers `postgres:16` | `Category=Integration` |
+| **1 — Domain units** | `Domain/` | 79 cases | None (in-memory) | `Category=Domain` |
+| **2 — Integration & contract** | `Integration/` | 27 cases | `WebApplicationFactory<Program>` + Testcontainers `postgres:16` | `Category=Integration` |
 | **3 — Concurrency** | `Concurrency/` | 2 cases | Dedicated Testcontainers instance, trimmed to 1 bay + 1 technician | `Category=Concurrency` |
 
 Tier 3 asserts that N simultaneous requests for the identical slot yield **exactly one
@@ -412,7 +417,7 @@ contract, implemented Infrastructure and Api, and wrote all three test tiers. Th
 retained every consequential decision: scope (vertical slice vs. full test suite),
 test-database strategy, and acceptance of each design trade-off.
 
-**Where the AI needed correction.** Three genuine defects were introduced and caught by
+**Where the AI needed correction.** Four genuine defects were introduced and caught by
 the process, all recorded in `docs/ai-refinement-log.md`:
 
 1. **The concurrency misclassification (500 instead of 409).** This is the most
@@ -429,6 +434,14 @@ the process, all recorded in `docs/ai-refinement-log.md`:
    `ObjectResult.ContentTypes`, which appeared to work in a unit assertion but was
    ignored at runtime for `ValidationProblemDetails`. Only live `curl` verification
    caught it; the working fix used `JsonResult.ContentType`.
+4. **A required domain association that was never modelled — the customer.** Scenario A
+   requirement 3 asks a confirmed appointment to associate the customer, vehicle,
+   technician and service bay. The first pass modelled everything but the customer, because
+   `AGENTS.md` — the contract the agent built and tested to — never named one. Because the
+   same contract generated the tests, the suite could not detect the omission; it surfaced
+   only on a deliberate re-read of the challenge PDF against the running system. A
+   first-class `Customer` aggregate, a required `CustomerId`, a migration, seed data and
+   new Tier 1/Tier 2 tests closed the gap.
 
 **What worked well.** The frozen domain contract; writing tests as executable
 specifications rather than afterthoughts; verifying claims against a real PostgreSQL
@@ -437,4 +450,6 @@ flakiness as a defect signal rather than noise.
 
 **Process lesson.** The strongest signal in this build was not "tests pass" but
 "tests pass *repeatedly under load*". A single green run of a concurrency suite is
-close to worthless evidence.
+close to worthless evidence. The second lesson is that a green suite only proves
+conformance to the specification the agent was handed — when the source requirements and
+the derived engineering contract diverge, only a direct re-read of the source finds the gap.

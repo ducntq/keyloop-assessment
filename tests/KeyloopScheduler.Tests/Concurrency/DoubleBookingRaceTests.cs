@@ -29,6 +29,7 @@ public sealed class DoubleBookingRaceTests
         new()
         {
             DealershipId = SeedData.DealershipId,
+            CustomerId = SeedData.CustomerAId,
             ServiceTypeId = SeedData.OilAndInspectionServiceTypeId,
             Vin = "1HGBH41JXMN109186",
             StartTimeUtc = start

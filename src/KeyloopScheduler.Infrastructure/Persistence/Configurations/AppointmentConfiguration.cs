@@ -19,6 +19,7 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
         builder.Property(a => a.ServiceBayId).HasColumnName("service_bay_id").IsRequired();
         builder.Property(a => a.TechnicianId).HasColumnName("technician_id").IsRequired();
         builder.Property(a => a.ServiceTypeId).HasColumnName("service_type_id").IsRequired();
+        builder.Property(a => a.CustomerId).HasColumnName("customer_id").IsRequired();
 
         builder.Property(a => a.VehicleIdentification)
             .HasColumnName("vin")
@@ -80,6 +81,11 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
         builder.HasOne<ServiceType>()
             .WithMany()
             .HasForeignKey(a => a.ServiceTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<Customer>()
+            .WithMany()
+            .HasForeignKey(a => a.CustomerId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne<Dealership>()

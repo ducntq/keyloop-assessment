@@ -58,10 +58,12 @@ internal sealed class AppointmentBookingService : IAppointmentBookingService
             stopwatch.Stop();
 
             _logger.LogInformation(
-                "Booking outcome {Outcome} DealershipId={DealershipId} ServiceTypeId={ServiceTypeId} " +
-                "ServiceBayId={ServiceBayId} TechnicianId={TechnicianId} AppointmentId={AppointmentId} DurationMs={DurationMs}",
+                "Booking outcome {Outcome} DealershipId={DealershipId} CustomerId={CustomerId} " +
+                "ServiceTypeId={ServiceTypeId} ServiceBayId={ServiceBayId} TechnicianId={TechnicianId} " +
+                "AppointmentId={AppointmentId} DurationMs={DurationMs}",
                 "Booked",
                 result.DealershipId,
+                result.CustomerId,
                 result.ServiceTypeId,
                 result.ServiceBayId,
                 result.TechnicianId,
@@ -103,6 +105,20 @@ internal sealed class AppointmentBookingService : IAppointmentBookingService
         var serviceType = await _catalog.GetServiceTypeAsync(request.ServiceTypeId, cancellationToken)
             ?? throw EntityNotFoundException.For("ServiceType", request.ServiceTypeId);
 
+        var customer = await _catalog.GetCustomerAsync(request.CustomerId, cancellationToken)
+            ?? throw EntityNotFoundException.For("Customer", request.CustomerId);
+
+        if (customer.DealershipId != request.DealershipId)
+        {
+            throw new DomainValidationException(
+                "The requested customer does not belong to the requested dealership.");
+        }
+
+        if (!customer.IsActive)
+        {
+            throw new DomainValidationException($"Customer '{customer.FullName}' is not active.");
+        }
+
         // Constructing the window validates UTC kind, ordering and duration.
         var window = new TimeWindow(request.StartTimeUtc, request.StartTimeUtc.Add(serviceType.Duration));
 
@@ -137,6 +153,7 @@ internal sealed class AppointmentBookingService : IAppointmentBookingService
                     bay.Id,
                     technician.Id,
                     serviceType.Id,
+                    customer.Id,
                     request.VehicleIdentification,
                     window,
                     createdAtUtc);
@@ -146,6 +163,7 @@ internal sealed class AppointmentBookingService : IAppointmentBookingService
                 return new BookingResult(
                     appointment.Id,
                     appointment.DealershipId,
+                    appointment.CustomerId,
                     appointment.ServiceBayId,
                     appointment.TechnicianId,
                     appointment.ServiceTypeId,

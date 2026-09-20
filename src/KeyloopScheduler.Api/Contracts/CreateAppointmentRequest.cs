@@ -13,6 +13,10 @@ public sealed class CreateAppointmentRequest
     [Required]
     public Guid DealershipId { get; init; }
 
+    /// <summary>Identifier of the customer the appointment is booked for.</summary>
+    [Required]
+    public Guid CustomerId { get; init; }
+
     /// <summary>Identifier of the requested service type (determines duration and required certification).</summary>
     [Required]
     public Guid ServiceTypeId { get; init; }

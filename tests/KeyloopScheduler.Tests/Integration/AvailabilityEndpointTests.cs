@@ -80,6 +80,7 @@ public sealed class AvailabilityEndpointTests
         var booking = await client.PostAsJsonAsync("/api/appointments", new CreateAppointmentRequest
         {
             DealershipId = SeedData.DealershipId,
+            CustomerId = SeedData.CustomerAId,
             ServiceTypeId = SeedData.OilAndInspectionServiceTypeId,
             ServiceBayId = SeedData.GeneralLiftBayId,
             TechnicianId = SeedData.TechAId,

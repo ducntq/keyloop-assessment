@@ -20,6 +20,8 @@ public sealed class SchedulerDbContext : DbContext
 
     public DbSet<Technician> Technicians => Set<Technician>();
 
+    public DbSet<Customer> Customers => Set<Customer>();
+
     public DbSet<ServiceType> ServiceTypes => Set<ServiceType>();
 
     public DbSet<Appointment> Appointments => Set<Appointment>();

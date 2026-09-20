@@ -30,7 +30,19 @@ public static class SeedData
 
     public static readonly Guid EvBatteryDiagnosticsServiceTypeId = Guid.Parse("d0000000-0000-0000-0000-000000000003");
 
+    public static readonly Guid CustomerAId = Guid.Parse("e0000000-0000-0000-0000-000000000001");
+
+    public static readonly Guid CustomerBId = Guid.Parse("e0000000-0000-0000-0000-000000000002");
+
     public const string DealershipName = "Main Dealership";
+
+    public const string CustomerAFullName = "Alice Nguyen";
+
+    public const string CustomerAEmail = "alice.nguyen@example.com";
+
+    public const string CustomerBFullName = "Bob Carter";
+
+    public const string CustomerBEmail = "bob.carter@example.com";
 
     public static readonly CertificationType[] TechACertifications = { CertificationType.General };
 

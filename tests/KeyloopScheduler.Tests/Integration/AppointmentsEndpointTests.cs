@@ -28,6 +28,7 @@ public sealed class AppointmentsEndpointTests
         new()
         {
             DealershipId = SeedData.DealershipId,
+            CustomerId = SeedData.CustomerAId,
             ServiceTypeId = SeedData.OilAndInspectionServiceTypeId,
             ServiceBayId = bayId,
             TechnicianId = technicianId,
@@ -49,6 +50,7 @@ public sealed class AppointmentsEndpointTests
         created.Should().NotBeNull();
         created!.AppointmentId.Should().NotBeEmpty();
         created.DealershipId.Should().Be(SeedData.DealershipId);
+        created.CustomerId.Should().Be(SeedData.CustomerAId);
         created.ServiceBayId.Should().NotBeEmpty();
         created.TechnicianId.Should().NotBeEmpty();
         created.ServiceTypeId.Should().Be(SeedData.OilAndInspectionServiceTypeId);
@@ -171,6 +173,7 @@ public sealed class AppointmentsEndpointTests
         stored.ServiceBayId.Should().Be(created!.ServiceBayId);
         stored.TechnicianId.Should().Be(created.TechnicianId);
         stored.ServiceTypeId.Should().Be(created.ServiceTypeId);
+        stored.CustomerId.Should().Be(SeedData.CustomerAId);
         stored.Status.Should().Be(AppointmentStatus.Scheduled);
         stored.VehicleIdentification.Value.Should().Be("1HGBH41JXMN109186");
     }

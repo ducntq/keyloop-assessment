@@ -44,6 +44,7 @@ public sealed class ResourceContentionTests
             var response = await client.PostAsJsonAsync("/api/appointments", new CreateAppointmentRequest
             {
                 DealershipId = SeedData.DealershipId,
+                CustomerId = SeedData.CustomerAId,
                 ServiceTypeId = SeedData.EvBatteryDiagnosticsServiceTypeId,
                 Vin = "1HGBH41JXMN109186",
                 StartTimeUtc = TestCalendar.At(day, 9, 0)
@@ -70,6 +71,7 @@ public sealed class ResourceContentionTests
         var first = await client.PostAsJsonAsync("/api/appointments", new CreateAppointmentRequest
         {
             DealershipId = SeedData.DealershipId,
+            CustomerId = SeedData.CustomerAId,
             ServiceTypeId = SeedData.OilAndInspectionServiceTypeId,
             ServiceBayId = SeedData.GeneralLiftBayId,
             TechnicianId = SeedData.TechAId,
@@ -82,6 +84,7 @@ public sealed class ResourceContentionTests
         var second = await client.PostAsJsonAsync("/api/appointments", new CreateAppointmentRequest
         {
             DealershipId = SeedData.DealershipId,
+            CustomerId = SeedData.CustomerAId,
             ServiceTypeId = SeedData.OilAndInspectionServiceTypeId,
             ServiceBayId = SeedData.GeneralLiftBayId,
             TechnicianId = SeedData.TechBId,
@@ -102,6 +105,7 @@ public sealed class ResourceContentionTests
         var first = await client.PostAsJsonAsync("/api/appointments", new CreateAppointmentRequest
         {
             DealershipId = SeedData.DealershipId,
+            CustomerId = SeedData.CustomerAId,
             ServiceTypeId = SeedData.OilAndInspectionServiceTypeId,
             ServiceBayId = SeedData.AlignmentRackBayId,
             TechnicianId = SeedData.TechAId,
@@ -114,6 +118,7 @@ public sealed class ResourceContentionTests
         var second = await client.PostAsJsonAsync("/api/appointments", new CreateAppointmentRequest
         {
             DealershipId = SeedData.DealershipId,
+            CustomerId = SeedData.CustomerAId,
             ServiceTypeId = SeedData.OilAndInspectionServiceTypeId,
             ServiceBayId = SeedData.AlignmentRackBayId,
             TechnicianId = SeedData.TechAId,

@@ -26,7 +26,10 @@ Swagger UI, `requests.http`, and the automated integration test harness.
   `(TechnicianId, StartTimeUtc, EndTimeUtc)` keep contention checks as index scans.
 - **Uniform RFC 7807 error contract.** Every error — domain, conflict, or model-binding —
   is `application/problem+json` with a `traceId`.
-- **94 automated tests across three tiers**, including a real multi-client race
+- **Customer-linked appointments.** A confirmed appointment persists an association to the
+  customer alongside the vehicle (VIN), service bay and technician — Scenario A
+  requirement 3.
+- **108 automated tests across three tiers**, including a real multi-client race
   simulation against containerized PostgreSQL 16.
 - **Structured JSON logs** with correlation IDs and booking-outcome telemetry.
 
@@ -148,7 +151,7 @@ Override any of the following from the environment or a local `.env` file:
 
 | Method | Route | Success | Notes |
 |---|---|---|---|
-| `POST` | `/api/appointments` | `201 Created` + `Location` | Reserves a bay **and** a qualified technician |
+| `POST` | `/api/appointments` | `201 Created` + `Location` | Reserves a bay **and** a qualified technician for the customer |
 | `GET` | `/api/appointments/{id}` | `200 OK` | Retrieves an appointment |
 | `DELETE` | `/api/appointments/{id}` | `204 No Content` | Cancels and releases both resources |
 | `GET` | `/api/availability` | `200 OK` | Only slots where **both** resources are free |
@@ -158,8 +161,8 @@ Error responses are RFC 7807 `application/problem+json`:
 
 | Status | Meaning |
 |---|---|
-| `400 Bad Request` | Non-UTC timestamp, past date, malformed VIN, out-of-hours or non-quantized start, uncertified technician |
-| `404 Not Found` | Unknown dealership, service type, bay, technician, or appointment |
+| `400 Bad Request` | Non-UTC timestamp, past date, malformed VIN, out-of-hours or non-quantized start, uncertified technician, inactive or cross-dealership customer |
+| `404 Not Found` | Unknown dealership, customer, service type, bay, technician, or appointment |
 | `409 Conflict` | Bay and/or technician already booked, including concurrent contention |
 
 ### Example — book an appointment
@@ -169,6 +172,7 @@ curl -X POST http://localhost:5080/api/appointments \
   -H 'Content-Type: application/json' \
   -d '{
     "dealershipId": "a0000000-0000-0000-0000-000000000001",
+    "customerId": "e0000000-0000-0000-0000-000000000001",
     "serviceTypeId": "d0000000-0000-0000-0000-000000000001",
     "serviceBayId": null,
     "technicianId": null,
@@ -195,6 +199,7 @@ curl "http://localhost:5080/api/availability?dealershipId=a0000000-0000-0000-000
 | Dealership | `Main Dealership` — `a0000000-0000-0000-0000-000000000001` |
 | Service bays | `Bay 1 (General Lift)` `…b0000000-…-0001`, `Bay 2 (Alignment Rack)` `…0002`, `Bay 3 (EV Specialized Bay)` `…0003` |
 | Technicians | `Tech A` [General] `…c0000000-…-0001`, `Tech B` [General, Brakes] `…0002`, `Tech C` [EV Certified, General] `…0003`, `Tech D` [Diesel, Brakes] `…0004` |
+| Customers | `Alice Nguyen` `…e0000000-…-0001`, `Bob Carter` `…0002` |
 | Service types | `Oil & Inspection` 30 min → General `…d0000000-…-0001`, `Brake Pad Replacement` 60 min → Brakes `…0002`, `EV Battery Diagnostics` 90 min → EV Certified `…0003` |
 
 ---
@@ -211,6 +216,8 @@ curl "http://localhost:5080/api/availability?dealershipId=a0000000-0000-0000-000
 5. **VIN format** — 17 characters, uppercase alphanumerics excluding `I`, `O`, `Q`.
 6. **Cancellation releases resources** — only `Scheduled` appointments occupy resources.
 7. **No bookings in the past.**
+8. **Customer association** — a confirmed appointment persists the customer, vehicle,
+   service bay and technician (Scenario A requirement 3).
 
 ---
 
@@ -231,8 +238,8 @@ dotnet test --filter Category=Concurrency --nologo
 
 | Tier | Category | Cases | What it proves |
 |---|---|---|---|
-| 1 | `Domain` | 68 | Interval-overlap matrix, business hours, quantization, VIN, entity lifecycle, qualification gate |
-| 2 | `Integration` | 24 | Happy-path `201` + `Location` + relational IDs, availability correctness, dual-resource `409`, all `400`/`404` validation paths |
+| 1 | `Domain` | 79 | Interval-overlap matrix, business hours, quantization, VIN, customer identity, entity lifecycle, qualification gate |
+| 2 | `Integration` | 27 | Happy-path `201` + `Location` + relational IDs, customer association, availability correctness, dual-resource `409`, all `400`/`404` validation paths |
 | 3 | `Concurrency` | 2 | N simultaneous requests for one slot → exactly one `201`, the rest `409`, exactly one row |
 
 Tier 2 and Tier 3 spin up a throwaway **PostgreSQL 16** container via Testcontainers and
@@ -295,7 +302,7 @@ registered them. The agent detected this by inspecting the filesystem rather tha
 trusting the launch acknowledgements, and completed both layers directly. The open
 question is whether the tasks were rejected at launch or lost afterwards.
 
-**Three defects were found and fixed, and the process that found them matters more than
+**Four defects were found and fixed, and the process that found them matters more than
 the fixes.** All are recorded in [`docs/ai-refinement-log.md`](docs/ai-refinement-log.md):
 
 1. **A concurrency bug that returned `500` instead of `409`.** The AI's contention
@@ -317,8 +324,18 @@ the fixes.** All are recorded in [`docs/ai-refinement-log.md`](docs/ai-refinemen
    `curl` showed the server still returning `application/json` — the property is ignored for
    `ValidationProblemDetails`. The working fix used `JsonResult.ContentType`. Green tests
    were not sufficient evidence; only exercising the running system was.
+4. **A required association that was never modelled — the customer.** Scenario A
+   requirement 3 asks a confirmed appointment to associate the *customer*, vehicle,
+   technician and service bay. The first pass modelled everything except the customer,
+   because `AGENTS.md` — the contract the agent built to — never named one, and every test
+   derived from that same contract, so the suite was blind to the gap. It surfaced only by
+   re-reading the challenge PDF against the running system, and was closed with a
+   first-class `Customer` aggregate, a required `CustomerId`, a migration, seed data and
+   new Tier 1/Tier 2 tests. The lesson: an AI optimises against the specification it is
+   handed, so a green suite proves conformance to your contract — not correctness against
+   the requirements behind it.
 
-A fourth issue — using an EF Core 9-only type (`IDbContextOptionsConfiguration<>`) against
+A further issue — using an EF Core 9-only type (`IDbContextOptionsConfiguration<>`) against
 an EF Core 8 target — was caught immediately by the compiler.
 
 **What the agent did well.** Freezing the domain contract before parallelising; writing

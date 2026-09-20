@@ -27,6 +27,7 @@ public sealed class ValidationEndpointTests
         new()
         {
             DealershipId = SeedData.DealershipId,
+            CustomerId = SeedData.CustomerAId,
             ServiceTypeId = SeedData.OilAndInspectionServiceTypeId,
             Vin = vin,
             StartTimeUtc = start
@@ -106,6 +107,7 @@ public sealed class ValidationEndpointTests
         var response = await client.PostAsJsonAsync("/api/appointments", new CreateAppointmentRequest
         {
             DealershipId = SeedData.DealershipId,
+            CustomerId = SeedData.CustomerAId,
             ServiceTypeId = SeedData.EvBatteryDiagnosticsServiceTypeId,
             Vin = "1HGBH41JXMN109186",
             StartTimeUtc = TestCalendar.At(43, 17, 30)
@@ -124,6 +126,7 @@ public sealed class ValidationEndpointTests
         var response = await client.PostAsJsonAsync("/api/appointments", new CreateAppointmentRequest
         {
             DealershipId = Guid.NewGuid(),
+            CustomerId = SeedData.CustomerAId,
             ServiceTypeId = SeedData.OilAndInspectionServiceTypeId,
             Vin = "1HGBH41JXMN109186",
             StartTimeUtc = TestCalendar.At(44, 9, 0)
@@ -140,6 +143,7 @@ public sealed class ValidationEndpointTests
         var response = await client.PostAsJsonAsync("/api/appointments", new CreateAppointmentRequest
         {
             DealershipId = SeedData.DealershipId,
+            CustomerId = SeedData.CustomerAId,
             ServiceTypeId = SeedData.BrakePadReplacementServiceTypeId,
             TechnicianId = SeedData.TechAId, // GENERAL only, brakes require BRAKES
             Vin = "1HGBH41JXMN109186",

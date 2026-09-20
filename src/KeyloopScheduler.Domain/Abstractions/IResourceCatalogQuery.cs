@@ -16,6 +16,8 @@ public interface IResourceCatalogQuery
 
     Task<Technician?> GetTechnicianAsync(Guid technicianId, CancellationToken cancellationToken = default);
 
+    Task<Customer?> GetCustomerAsync(Guid customerId, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<ServiceBay>> GetActiveServiceBaysAsync(
         Guid dealershipId,
         CancellationToken cancellationToken = default);

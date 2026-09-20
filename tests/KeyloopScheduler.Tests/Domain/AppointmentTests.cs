@@ -18,6 +18,7 @@ public sealed class AppointmentTests
     private static readonly Guid BayId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly Guid TechnicianId = Guid.Parse("44444444-4444-4444-4444-444444444444");
     private static readonly Guid ServiceTypeId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    private static readonly Guid CustomerId = Guid.Parse("66666666-6666-6666-6666-666666666666");
     private static readonly Vin Vehicle = new("1HGBH41JXMN109186");
     private static readonly DateOnly Day = new(2026, 3, 2);
     private static readonly DateTime CreatedAt = new(2026, 2, 1, 12, 0, 0, DateTimeKind.Utc);
@@ -34,6 +35,7 @@ public sealed class AppointmentTests
             BayId,
             TechnicianId,
             ServiceTypeId,
+            CustomerId,
             Vehicle,
             window,
             createdAtUtc ?? CreatedAt);
@@ -48,6 +50,7 @@ public sealed class AppointmentTests
         appointment.StartTimeUtc.Should().Be(Window(9, 0, 30).StartUtc);
         appointment.EndTimeUtc.Should().Be(Window(9, 0, 30).EndUtc);
         appointment.Window.Duration.Should().Be(TimeSpan.FromMinutes(30));
+        appointment.CustomerId.Should().Be(CustomerId);
         appointment.VehicleIdentification.Should().Be(Vehicle);
         appointment.CancelledAtUtc.Should().BeNull();
     }
@@ -93,6 +96,7 @@ public sealed class AppointmentTests
             BayId,
             TechnicianId,
             ServiceTypeId,
+            CustomerId,
             Vehicle,
             Window(9, 0, 30),
             CreatedAt);
@@ -109,11 +113,29 @@ public sealed class AppointmentTests
             BayId,
             TechnicianId,
             ServiceTypeId,
+            CustomerId,
             Vehicle,
             Window(9, 0, 30),
             new DateTime(2026, 2, 1, 12, 0, 0, DateTimeKind.Unspecified));
 
         act.Should().Throw<DomainValidationException>().WithMessage("*Created-at*UTC*");
+    }
+
+    [Fact]
+    public void Schedule_rejects_an_empty_customer_id()
+    {
+        var act = () => Appointment.Schedule(
+            AppointmentId,
+            DealershipId,
+            BayId,
+            TechnicianId,
+            ServiceTypeId,
+            Guid.Empty,
+            Vehicle,
+            Window(9, 0, 30),
+            CreatedAt);
+
+        act.Should().Throw<DomainValidationException>().WithMessage("*Customer id*");
     }
 
     [Fact]

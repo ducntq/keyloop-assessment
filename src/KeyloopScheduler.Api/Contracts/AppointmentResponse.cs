@@ -9,6 +9,7 @@ namespace KeyloopScheduler.Api.Contracts;
 public sealed record AppointmentResponse(
     Guid AppointmentId,
     Guid DealershipId,
+    Guid CustomerId,
     Guid ServiceBayId,
     Guid TechnicianId,
     Guid ServiceTypeId,
@@ -21,6 +22,7 @@ public sealed record AppointmentResponse(
         new(
             result.AppointmentId,
             result.DealershipId,
+            result.CustomerId,
             result.ServiceBayId,
             result.TechnicianId,
             result.ServiceTypeId,
@@ -33,6 +35,7 @@ public sealed record AppointmentResponse(
         new(
             appointment.Id,
             appointment.DealershipId,
+            appointment.CustomerId,
             appointment.ServiceBayId,
             appointment.TechnicianId,
             appointment.ServiceTypeId,
