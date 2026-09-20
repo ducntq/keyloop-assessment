@@ -147,6 +147,34 @@ Override any of the following from the environment or a local `.env` file:
 
 ---
 
+## Live demo script
+
+`demo.sh` runs the full booking story against a local stack and asserts the expected HTTP
+status at each step:
+
+1. health probe
+2. availability search
+3. `201` booking
+4. `409` on the same slot
+5. `204` cancellation
+6. `201` rebooking (resources released)
+7. `400` when the requested technician lacks the required certification
+8. `201` auto-assignment when bay/technician are omitted
+9. `400` for a non-UTC start
+10. the Tier 3 race suite (exactly one winner under simultaneous requests)
+
+```bash
+./demo.sh --reset             # recreate the stack with docker compose, then run the demo
+./demo.sh                     # run against an already-running stack
+./demo.sh --no-concurrency    # skip the Tier 3 race suite (step 10)
+```
+
+It uses only `curl` (pretty-printing JSON via `jq`, falling back to `python3`), exits
+non-zero if any status is unexpected, releases what it books so it can be re-run, and
+honours `BASE_URL`, `DEMO_DATE` and `RUN_CONCURRENCY` from the environment.
+
+---
+
 ## API
 
 | Method | Route | Success | Notes |

@@ -15,6 +15,9 @@
 @customerA = e0000000-0000-0000-0000-000000000001
 @customerB = e0000000-0000-0000-0000-000000000002
 
+### Paste an appointmentId returned by a booking request below before cancelling.
+@appointmentId = 00000000-0000-0000-0000-000000000000
+
 ### Health probe
 GET {{host}}/health
 Accept: application/json
@@ -81,4 +84,22 @@ Content-Type: application/json
   "technicianId": null,
   "vin": "1HGBH41JXMN109186",
   "startTimeUtc": "2026-09-22T09:00:00"
+}
+
+### Cancel an appointment -> expect 204 No Content (releases bay and technician)
+DELETE {{host}}/api/appointments/{{appointmentId}}
+Accept: application/json
+
+### Rebook the freed slot -> expect 201 Created (resources are available again)
+POST {{host}}/api/appointments
+Content-Type: application/json
+
+{
+  "dealershipId": "{{dealershipId}}",
+  "customerId": "{{customerB}}",
+  "serviceTypeId": "{{oilService}}",
+  "serviceBayId": "{{bay1}}",
+  "technicianId": "{{techA}}",
+  "vin": "2T1BURHE0JC123456",
+  "startTimeUtc": "2026-09-22T09:00:00Z"
 }
